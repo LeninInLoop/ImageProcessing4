@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,14 +44,23 @@ def create_histogram(
 def compute_cdf(
         image: np.ndarray,
         is_normalized: bool = False,
+        is_manual: bool = False,
 ) -> np.ndarray :
 
-    hist, bins = np.histogram(
-        image.ravel(),
-        bins=256,
-        range=(0, 255)
-    )
-    cdf = hist.cumsum()
+    if is_manual:
+        cdf = np.zeros(256, dtype=int)
+        counter = Counter(image.ravel())
+        total = 0
+        for i in range(256):
+            total += counter.get(i, 0)
+            cdf[i] = total
+    else:
+        hist, bins = np.histogram(
+            image.ravel(),
+            bins=256,
+            range=(0, 256)
+        )
+        cdf = hist.cumsum()
 
     return cdf if not is_normalized else ((cdf - cdf.min()) * 255 / (cdf.max() - cdf.min())).astype(np.uint8)
 
@@ -80,7 +90,8 @@ def main():
     image_array = load_image(image_path)
 
     # Print image shape
-    print("Image Shape:", image_array.shape)
+    print(50*"-","\nOriginal Image Array:\n", image_array)
+    print("\nImage Shape:", image_array.shape)
 
     # Create and display histogram
     create_histogram(
@@ -99,14 +110,15 @@ def main():
     normalized_cdf = compute_cdf(
         image=image_array,
         is_normalized=True,
+        is_manual=True
     )
-    print("Normalized CDF:", normalized_cdf)
+    print(50*"-","\nNormalized CDF Array:\n", normalized_cdf)
 
     equalized_image_array = apply_histogram_equalization(
         image_array=image_array,
         image_cdf=normalized_cdf,
     )
-    print("Equalized Image:", equalized_image_array)
+    print(50*"-","\nEqualized Image Array:\n", equalized_image_array)
 
     create_histogram(
         image=equalized_image_array,
